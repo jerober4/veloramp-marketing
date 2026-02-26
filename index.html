@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veloramp — AI-Powered New Hire Engagement</title>
+  <meta name="description" content="Automated check-ins via Slack and Teams keep new hires engaged through their first 90 days — and flag the ones who need attention before you lose them.">
+  <link rel="icon" type="image/png" href="assets/logo-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ========== RESET & BASE ========== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #FAFAF8; color: #18181B; line-height: 1.6; overflow-x: hidden; }
+    img { max-width: 100%; display: block; }
+    a { text-decoration: none; color: inherit; }
+    button { border: none; cursor: pointer; font-family: inherit; }
+    ul { list-style: none; }
+
+    /* ========== UTILITIES ========== */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    .badge { display: inline-block; font-size: 13px; font-weight: 600; padding: 6px 16px; border-radius: 100px; background: rgba(232,149,109,0.12); color: #D4845C; letter-spacing: 0.01em; }
+    .section-headline { font-size: clamp(32px, 4vw, 48px); font-weight: 800; line-height: 1.15; letter-spacing: -0.03em; color: #18181B; margin-top: 16px; }
+    .btn-primary { display: inline-flex; align-items: center; justify-content: center; padding: 13px 28px; background: #E8956D; color: #fff; font-size: 15px; font-weight: 600; border-radius: 10px; transition: background 0.2s, transform 0.15s; }
+    .btn-primary:hover { background: #D4845C; transform: translateY(-1px); }
+    .btn-outline { display: inline-flex; align-items: center; justify-content: center; padding: 13px 28px; background: transparent; color: #18181B; font-size: 15px; font-weight: 600; border-radius: 10px; border: 1.5px solid #E8E8E4; transition: border-color 0.2s, transform 0.15s; }
+    .btn-outline:hover { border-color: #18181B; transform: translateY(-1px); }
+    .text-link { font-size: 15px; font-weight: 600; color: #18181B; display: inline-flex; align-items: center; gap: 4px; transition: opacity 0.2s; }
+    .text-link:hover { opacity: 0.7; }
+
+    /* Fade-in animation */
+    .fade-in { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+    /* ========== NAV ========== */
+    .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(250,250,248,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid transparent; transition: border-color 0.3s, box-shadow 0.3s; }
+    .nav.scrolled { border-bottom-color: #E8E8E4; box-shadow: 0 1px 8px rgba(0,0,0,0.04); }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 70px; }
+    .nav-logo { display: flex; align-items: center; padding: 6px 10px; border-radius: 8px; background: #E8956D; transition: background 0.4s ease; }
+    .nav.scrolled .nav-logo { background: transparent; }
+    .nav-logo img { height: 40px; width: auto; }
+    .nav-links { display: flex; align-items: center; gap: 36px; }
+    .nav-links a { font-size: 14px; font-weight: 500; color: #71717A; transition: color 0.2s; }
+    .nav-links a:hover { color: #18181B; }
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+    .nav-actions .btn-outline { padding: 9px 20px; font-size: 14px; }
+    .nav-actions .btn-primary { padding: 9px 20px; font-size: 14px; }
+    .hamburger { display: none; flex-direction: column; gap: 5px; background: none; padding: 4px; }
+    .hamburger span { display: block; width: 22px; height: 2px; background: #18181B; border-radius: 2px; transition: transform 0.3s, opacity 0.3s; }
+    .hamburger.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.active span:nth-child(2) { opacity: 0; }
+    .hamburger.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .mobile-menu { display: none; position: fixed; top: 70px; left: 0; right: 0; bottom: 0; background: rgba(250,250,248,0.98); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 32px 24px; z-index: 999; }
+    .mobile-menu.open { display: flex; flex-direction: column; gap: 8px; }
+    .mobile-menu a { font-size: 18px; font-weight: 500; color: #18181B; padding: 16px 0; border-bottom: 1px solid #E8E8E4; }
+    .mobile-menu .mobile-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+    .mobile-menu .mobile-actions .btn-primary,
+    .mobile-menu .mobile-actions .btn-outline { width: 100%; text-align: center; }
+
+    /* ========== HERO ========== */
+    .hero { padding: 150px 0 80px; text-align: center; }
+    .hero .badge { margin-bottom: 24px; }
+    .hero h1 { font-size: clamp(36px, 5vw, 60px); font-weight: 800; line-height: 1.1; letter-spacing: -0.035em; color: #18181B; max-width: 780px; margin: 0 auto 24px; }
+    .hero p { font-size: 18px; line-height: 1.65; color: #71717A; max-width: 620px; margin: 0 auto 36px; }
+    .hero-ctas { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; }
+    .hero-subtext { margin-top: 20px; font-size: 13px; color: #A1A1AA; }
+    .hero-subtext span { margin: 0 8px; }
+
+    /* Browser mockup */
+    .hero-mockup { max-width: 960px; margin: 64px auto 0; border-radius: 16px; overflow: hidden; border: 1px solid #E8E8E4; box-shadow: 0 24px 80px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04); background: #fff; }
+    .mockup-toolbar { display: flex; align-items: center; gap: 8px; padding: 14px 20px; background: #FAFAF8; border-bottom: 1px solid #E8E8E4; }
+    .mockup-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .mockup-dot.red { background: #FF5F57; }
+    .mockup-dot.yellow { background: #FEBC2E; }
+    .mockup-dot.green { background: #28C840; }
+    .mockup-url { flex: 1; margin-left: 12px; background: #fff; border: 1px solid #E8E8E4; border-radius: 8px; padding: 6px 14px; font-size: 12px; color: #A1A1AA; }
+    .mockup-body { padding: 32px; }
+    .mockup-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    .mockup-greeting { font-size: 13px; color: #71717A; }
+    .mockup-title { font-size: 20px; font-weight: 700; color: #18181B; margin-top: 2px; }
+    .mockup-time { font-size: 12px; color: #E8956D; }
+    .mockup-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .mockup-stat { padding: 20px; border: 1px solid #E8E8E4; border-radius: 12px; text-align: center; }
+    .mockup-stat-label { font-size: 11px; font-weight: 600; color: #A1A1AA; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .mockup-stat-value { font-size: 28px; font-weight: 800; color: #18181B; }
+    .mockup-stat-sub { font-size: 11px; color: #A1A1AA; margin-top: 4px; }
+    .mockup-section-title { font-size: 14px; font-weight: 700; color: #18181B; margin-bottom: 16px; }
+    .mockup-table { width: 100%; border-collapse: collapse; }
+    .mockup-table th { text-align: left; font-size: 11px; font-weight: 600; color: #A1A1AA; text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 12px; border-bottom: 1px solid #E8E8E4; }
+    .mockup-table td { padding: 14px 12px; font-size: 13px; color: #18181B; border-bottom: 1px solid #f4f4f2; }
+    .status-badge { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; }
+    .status-confirmed { background: rgba(232,149,109,0.15); color: #D4845C; }
+    .status-active { background: rgba(34,197,94,0.12); color: #16a34a; }
+    .status-pending { background: rgba(234,179,8,0.12); color: #ca8a04; }
+    .health-bar { width: 48px; height: 6px; background: #f4f4f2; border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
+    .health-fill { height: 100%; border-radius: 3px; }
+    .health-high { background: #22c55e; }
+    .health-med { background: #E8956D; }
+
+    /* ========== SOCIAL PROOF ========== */
+    .social-proof { padding: 64px 0 80px; text-align: center; border-top: 1px solid #E8E8E4; }
+    .social-proof p { font-size: 14px; color: #A1A1AA; font-weight: 500; margin-bottom: 40px; }
+    .logo-row { display: flex; align-items: center; justify-content: center; gap: 48px; flex-wrap: wrap; }
+    .logo-row img { height: 28px; width: auto; filter: grayscale(100%) opacity(0.5); transition: filter 0.3s; }
+    .logo-row img:hover { filter: grayscale(0%) opacity(1); }
+
+    /* ========== HOW IT WORKS ========== */
+    .how-it-works { padding: 100px 0; }
+    .how-it-works .section-header { text-align: center; margin-bottom: 64px; }
+    .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+    .step-card { padding: 40px 32px; border: 1px solid #E8E8E4; border-radius: 16px; background: #fff; transition: box-shadow 0.3s, transform 0.3s; }
+    .step-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.06); transform: translateY(-4px); }
+    .step-icon { width: 52px; height: 52px; border-radius: 14px; background: rgba(232,149,109,0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+    .step-icon svg { width: 24px; height: 24px; color: #E8956D; }
+    .step-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.01em; }
+    .step-card p { font-size: 14px; color: #71717A; line-height: 1.7; }
+
+    /* ========== FEATURES ========== */
+    .features { padding: 100px 0; }
+    .features .section-header { text-align: center; margin-bottom: 64px; }
+    .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .feature-card { padding: 40px; border: 1px solid #E8E8E4; border-radius: 16px; background: #fff; transition: box-shadow 0.3s, transform 0.3s; }
+    .feature-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.06); transform: translateY(-4px); }
+    .feature-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(232,149,109,0.1); display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+    .feature-icon svg { width: 22px; height: 22px; color: #E8956D; }
+    .feature-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.01em; }
+    .feature-card p { font-size: 14px; color: #71717A; line-height: 1.7; }
+
+    /* ========== EARLY DETECTION ========== */
+    .early-detection { padding: 100px 0; }
+    .ed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+    .ed-content .badge { margin-bottom: 16px; }
+    .ed-content h2 { font-size: clamp(32px, 4vw, 44px); font-weight: 800; line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 20px; }
+    .ed-content > p { font-size: 16px; color: #71717A; line-height: 1.7; margin-bottom: 32px; }
+    .ed-bullets { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 32px; margin-bottom: 36px; }
+    .ed-bullet { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; }
+    .ed-check { width: 22px; height: 22px; border-radius: 50%; background: rgba(232,149,109,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ed-check svg { width: 12px; height: 12px; color: #E8956D; }
+
+    /* Alert card */
+    .alert-card-wrapper { display: flex; flex-direction: column; gap: 20px; }
+    .alert-card { background: #fff; border-radius: 14px; border: 1px solid #E8E8E4; border-left: 4px solid #ef4444; padding: 24px 28px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .alert-flag { font-size: 14px; font-weight: 700; color: #ef4444; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .alert-name { font-size: 16px; font-weight: 700; color: #18181B; margin-bottom: 6px; }
+    .alert-detail { font-size: 13px; color: #71717A; line-height: 1.6; }
+    .alert-meta { display: flex; align-items: center; gap: 16px; margin-top: 14px; }
+    .alert-tag { font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 100px; background: #fef2f2; color: #ef4444; }
+    .alert-day { font-size: 13px; color: #A1A1AA; }
+    .alert-link { font-size: 13px; font-weight: 600; color: #E8956D; margin-left: auto; }
+
+    /* Second alert (warning) */
+    .alert-card.warning { border-left-color: #f59e0b; }
+    .alert-card.warning .alert-flag { color: #f59e0b; }
+    .alert-card.warning .alert-tag { background: #fffbeb; color: #d97706; }
+
+    /* Progress card */
+    .progress-card { background: #fff; border-radius: 14px; border: 1px solid #E8E8E4; padding: 24px 28px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+    .progress-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .progress-card-title { font-size: 15px; font-weight: 700; color: #18181B; }
+    .progress-card-date { font-size: 12px; color: #A1A1AA; }
+    .progress-bars { display: flex; flex-direction: column; gap: 14px; }
+    .progress-item { display: flex; align-items: center; gap: 12px; }
+    .progress-label { font-size: 12px; font-weight: 600; color: #71717A; width: 100px; }
+    .progress-track { flex: 1; height: 8px; background: #f4f4f2; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+    .progress-fill.green { background: #22c55e; }
+    .progress-fill.peach { background: #E8956D; }
+    .progress-fill.red { background: #ef4444; }
+    .progress-value { font-size: 12px; font-weight: 700; color: #18181B; width: 36px; text-align: right; }
+
+    /* ========== PRICING ========== */
+    .pricing { padding: 100px 0; }
+    .pricing .section-header { text-align: center; margin-bottom: 48px; }
+    .pricing-toggle { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 56px; }
+    .pricing-toggle span { font-size: 14px; font-weight: 500; color: #A1A1AA; transition: color 0.2s; }
+    .pricing-toggle span.active { color: #18181B; }
+    .toggle-switch { width: 48px; height: 26px; background: #E8E8E4; border-radius: 13px; cursor: pointer; position: relative; transition: background 0.3s; }
+    .toggle-switch.active { background: #E8956D; }
+    .toggle-knob { width: 20px; height: 20px; background: #fff; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: transform 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .toggle-switch.active .toggle-knob { transform: translateX(22px); }
+    .save-badge { font-size: 12px; font-weight: 600; color: #E8956D; background: rgba(232,149,109,0.12); padding: 3px 10px; border-radius: 100px; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .pricing-card { padding: 40px; border: 1px solid #E8E8E4; border-radius: 16px; background: #fff; position: relative; display: flex; flex-direction: column; transition: box-shadow 0.3s, transform 0.3s; }
+    .pricing-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.06); transform: translateY(-4px); }
+    .pricing-card.popular { border-color: #E8956D; border-width: 2px; }
+    .popular-badge { position: absolute; top: -13px; left: 50%; transform: translateX(-50%); background: #E8956D; color: #fff; font-size: 12px; font-weight: 700; padding: 4px 16px; border-radius: 100px; white-space: nowrap; }
+    .pricing-tier { font-size: 16px; font-weight: 700; color: #18181B; margin-bottom: 16px; }
+    .pricing-price { display: flex; align-items: baseline; gap: 4px; margin-bottom: 8px; }
+    .pricing-amount { font-size: 48px; font-weight: 800; color: #18181B; letter-spacing: -0.03em; line-height: 1; }
+    .pricing-period { font-size: 15px; color: #A1A1AA; }
+    .pricing-divider { height: 1px; background: #E8E8E4; margin: 28px 0; }
+    .pricing-features { display: flex; flex-direction: column; gap: 16px; flex: 1; margin-bottom: 32px; }
+    .pricing-feature { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #52525B; }
+    .pricing-feature svg { width: 18px; height: 18px; color: #E8956D; flex-shrink: 0; }
+    .pricing-cta { margin-top: auto; }
+    .pricing-cta .btn-primary,
+    .pricing-cta .btn-outline { width: 100%; }
+    .pricing-footer { text-align: center; margin-top: 40px; font-size: 13px; color: #A1A1AA; }
+    .pricing-footer span { margin: 0 8px; }
+
+    /* ========== CTA BANNER ========== */
+    .cta-banner { padding: 100px 0; background: #1A1009; text-align: center; }
+    .cta-banner h2 { font-size: clamp(32px, 4vw, 48px); font-weight: 800; color: #fff; letter-spacing: -0.03em; margin-bottom: 16px; line-height: 1.15; }
+    .cta-banner p { font-size: 17px; color: #A1A1AA; max-width: 520px; margin: 0 auto 36px; line-height: 1.65; }
+
+    /* ========== FOOTER ========== */
+    .footer { background: #1A1009; padding: 48px 0 32px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .footer-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 24px; margin-bottom: 40px; }
+    .footer-brand img { height: 40px; background: #E8956D; padding: 6px; border-radius: 8px; margin-bottom: 8px; }
+    .footer-brand p { font-size: 13px; color: #71717A; }
+    .footer-links { display: flex; gap: 32px; }
+    .footer-links a { font-size: 14px; color: #A1A1AA; transition: color 0.2s; }
+    .footer-links a:hover { color: #fff; }
+    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 24px; text-align: center; font-size: 13px; color: #52525B; }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 1024px) {
+      .steps-grid { grid-template-columns: repeat(2, 1fr); }
+      .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+      .pricing-card:last-child { grid-column: 1 / -1; max-width: 400px; margin: 0 auto; width: 100%; }
+      .ed-grid { gap: 48px; }
+    }
+
+    @media (max-width: 768px) {
+      .nav-links, .nav-actions { display: none; }
+      .hamburger { display: flex; }
+      .hero { padding: 130px 0 60px; }
+      .hero h1 { font-size: 32px; }
+      .hero p { font-size: 16px; }
+      .mockup-stats { grid-template-columns: repeat(2, 1fr); }
+      .mockup-table { font-size: 12px; }
+      .logo-row { gap: 32px; }
+      .logo-row img { height: 22px; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .features-grid { grid-template-columns: 1fr; }
+      .ed-grid { grid-template-columns: 1fr; gap: 48px; }
+      .ed-bullets { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; }
+      .pricing-card:last-child { max-width: none; }
+      .footer-inner { flex-direction: column; text-align: center; }
+      .footer-links { flex-wrap: wrap; justify-content: center; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-ctas { flex-direction: column; }
+      .hero-ctas .btn-primary { width: 100%; }
+      .hero h1 { font-size: 28px; }
+      .mockup-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .mockup-body { padding: 20px; }
+      .mockup-stat { padding: 14px; }
+      .mockup-stat-value { font-size: 22px; }
+      .section-headline { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========== NAV ========== -->
+  <nav class="nav" id="nav">
+    <div class="container nav-inner">
+      <a href="#" class="nav-logo">
+        <img src="assets/veloramp_clean.png" alt="Veloramp">
+      </a>
+      <div class="nav-links">
+        <a href="#how-it-works">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+      </div>
+      <div class="nav-actions">
+        <a href="https://app.veloramp.com" class="btn-outline">Login</a>
+        <a href="https://cal.com" class="btn-primary">Book a Demo</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#how-it-works" class="mobile-link">How it works</a>
+    <a href="#features" class="mobile-link">Features</a>
+    <a href="#pricing" class="mobile-link">Pricing</a>
+    <div class="mobile-actions">
+      <a href="https://app.veloramp.com" class="btn-outline">Login</a>
+      <a href="https://cal.com" class="btn-primary">Book a Demo</a>
+    </div>
+  </div>
+
+  <!-- ========== HERO ========== -->
+  <section class="hero" id="hero">
+    <div class="container">
+      <div class="fade-in">
+        <span class="badge">AI-powered new hire engagement</span>
+        <h1>20% of new hires leave within 90 days. Veloramp sees it coming.</h1>
+        <p>Automated check-ins via Slack and Teams keep new hires engaged through their first 90 days — and flag the ones who need attention before you lose them.</p>
+        <div class="hero-ctas">
+          <a href="#waitlist" class="btn-primary">Join the Waitlist</a>
+          <a href="https://cal.com" class="text-link">Book a Free Demo →</a>
+        </div>
+        <p class="hero-subtext">No credit card required<span>·</span>Setup in under 30 minutes</p>
+      </div>
+
+      <!-- Browser Mockup -->
+      <div class="hero-mockup fade-in">
+        <div class="mockup-toolbar">
+          <div class="mockup-dot red"></div>
+          <div class="mockup-dot yellow"></div>
+          <div class="mockup-dot green"></div>
+          <div class="mockup-url">app.veloramp.com/dashboard</div>
+        </div>
+        <div class="mockup-body">
+          <div class="mockup-header">
+            <div>
+              <div class="mockup-greeting">Good morning, Jordan</div>
+              <div class="mockup-title">Dashboard — Thursday, Feb 26</div>
+            </div>
+            <div class="mockup-time">Updated 8:03:42 AM</div>
+          </div>
+          <div class="mockup-stats">
+            <div class="mockup-stat">
+              <div class="mockup-stat-label">Active Onboardings</div>
+              <div class="mockup-stat-value">18</div>
+            </div>
+            <div class="mockup-stat">
+              <div class="mockup-stat-label">Avg Health Score</div>
+              <div class="mockup-stat-value" style="color:#22c55e;">87%</div>
+            </div>
+            <div class="mockup-stat">
+              <div class="mockup-stat-label">Response Rate (30d)</div>
+              <div class="mockup-stat-value">92%</div>
+              <div class="mockup-stat-sub">last 30 days</div>
+            </div>
+            <div class="mockup-stat">
+              <div class="mockup-stat-label">Messages This Month</div>
+              <div class="mockup-stat-value">124</div>
+            </div>
+          </div>
+          <div class="mockup-section-title">Active Onboardings</div>
+          <table class="mockup-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Day</th>
+                <th>Health</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:600;">Sarah Mitchell</td>
+                <td>Product Designer</td>
+                <td><span class="status-badge status-active">ACTIVE</span></td>
+                <td>Day 23</td>
+                <td><span class="health-bar"><span class="health-fill health-high" style="width:92%"></span></span>92%</td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;">James Chen</td>
+                <td>Software Engineer</td>
+                <td><span class="status-badge status-confirmed">CONFIRMED</span></td>
+                <td>Day 5</td>
+                <td><span class="health-bar"><span class="health-fill health-high" style="width:88%"></span></span>88%</td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;">Priya Patel</td>
+                <td>Account Executive</td>
+                <td><span class="status-badge status-active">ACTIVE</span></td>
+                <td>Day 41</td>
+                <td><span class="health-bar"><span class="health-fill health-med" style="width:74%"></span></span>74%</td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;">Marcus Lee</td>
+                <td>Marketing Manager</td>
+                <td><span class="status-badge status-confirmed">CONFIRMED</span></td>
+                <td>Day 2</td>
+                <td><span class="health-bar"><span class="health-fill health-high" style="width:95%"></span></span>95%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SOCIAL PROOF ========== -->
+  <section class="social-proof fade-in">
+    <div class="container">
+      <p>Trusted by HR teams who can't afford to lose great people.</p>
+      <div class="logo-row">
+        <img src="assets/logos/slack.png" alt="Slack">
+        <img src="assets/logos/teams.webp" alt="Microsoft Teams">
+        <img src="assets/logos/bamboohr.png" alt="BambooHR">
+        <img src="assets/logos/workday.png" alt="Workday">
+        <img src="assets/logos/rippling.png" alt="Rippling">
+        <img src="assets/logos/adp.png" alt="ADP">
+        <img src="assets/logos/paycom.png" alt="Paycom">
+        <img src="assets/logos/paylocity.png" alt="Paylocity">
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== HOW IT WORKS ========== -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-header fade-in">
+        <span class="badge">How it works</span>
+        <h2 class="section-headline">Get every new hire engaged in 3 simple steps</h2>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card fade-in">
+          <div class="step-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m9.86-2.556a4.5 4.5 0 0 0-1.242-7.244l4.5-4.5a4.5 4.5 0 0 1 6.364 6.364l-1.757 1.757" /><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" /></svg>
+          </div>
+          <h3>Connect & Sync</h3>
+          <p>Link Slack or Teams for messaging and your HRIS to automatically detect new hires. Setup takes minutes, no IT required.</p>
+        </div>
+        <div class="step-card fade-in">
+          <div class="step-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" /></svg>
+          </div>
+          <h3>Schedule Built Automatically</h3>
+          <p>The moment a new hire is added, Veloramp builds their personalized 90-day check-in schedule and starts sending messages automatically.</p>
+        </div>
+        <div class="step-card fade-in">
+          <div class="step-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" /></svg>
+          </div>
+          <h3>Stay Ahead of Disengagement</h3>
+          <p>When a new hire goes quiet or shows signs of disengagement, HR gets alerted early — before it becomes a resignation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FEATURES ========== -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header fade-in">
+        <span class="badge">Features</span>
+        <h2 class="section-headline">Everything your HR team needs to keep new hires engaged.</h2>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 0 0-2.455 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" /></svg>
+          </div>
+          <h3>AI-Generated Check-Ins</h3>
+          <p>Paste a job description and Veloramp writes a full 90-day message sequence tailored to the role.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" /></svg>
+          </div>
+          <h3>Slack & Teams Delivery</h3>
+          <p>Messages are delivered where your employees already work — no new app to download.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
+          </div>
+          <h3>Engagement Scoring</h3>
+          <p>Every response is tracked and scored. See health trends across your entire new hire cohort.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3-3-3m-12 3c0 1.232.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.017-.22.032-.441.046-.662M4.5 12l3 3m-3-3-3 3" /></svg>
+          </div>
+          <h3>HRIS Sync</h3>
+          <p>Connects with BambooHR, Workday, Rippling and more to automatically detect new hires.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== EARLY DETECTION ========== -->
+  <section class="early-detection" id="early-detection">
+    <div class="container">
+      <div class="ed-grid">
+        <div class="ed-content fade-in">
+          <span class="badge">Early Detection</span>
+          <h2>Spot disengagement before it becomes a resignation.</h2>
+          <p>Veloramp monitors every new hire's response patterns and flags the ones who are going quiet — giving HR time to step in and make a difference.</p>
+          <div class="ed-bullets">
+            <div class="ed-bullet">
+              <span class="ed-check"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg></span>
+              Response rate tracking
+            </div>
+            <div class="ed-bullet">
+              <span class="ed-check"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg></span>
+              Flag alerts via email
+            </div>
+            <div class="ed-bullet">
+              <span class="ed-check"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg></span>
+              Sentiment analysis
+            </div>
+            <div class="ed-bullet">
+              <span class="ed-check"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg></span>
+              Manager notifications
+            </div>
+            <div class="ed-bullet">
+              <span class="ed-check"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg></span>
+              90-day engagement timeline
+            </div>
+            <div class="ed-bullet">
+              <span class="ed-check"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg></span>
+              HR dashboard overview
+            </div>
+          </div>
+        </div>
+        <div class="alert-card-wrapper fade-in">
+          <div class="alert-card">
+            <div class="alert-flag">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="16" height="16"><path d="M3 3v18h2V3H3Zm2 0h9.382a1 1 0 0 1 .894.553L17 7l-1.724 3.447A1 1 0 0 1 14.382 11H5V3Z" /></svg>
+              Disengagement Alert
+            </div>
+            <div class="alert-name">Sarah M. has not responded in 7 days</div>
+            <div class="alert-detail">Last check-in was sent on Feb 19. No response received. This is her second consecutive missed check-in.</div>
+            <div class="alert-meta">
+              <span class="alert-tag">At Risk</span>
+              <span class="alert-day">Day 23 of 90</span>
+              <a href="#" class="alert-link">View Profile →</a>
+            </div>
+          </div>
+          <div class="alert-card warning">
+            <div class="alert-flag">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="16" height="16"><path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" /></svg>
+              Low Engagement Warning
+            </div>
+            <div class="alert-name">Marcus L. response rate dropped to 40%</div>
+            <div class="alert-detail">Response rate has declined 35% over the past two weeks. Sentiment score trending negative.</div>
+            <div class="alert-meta">
+              <span class="alert-tag">Monitor</span>
+              <span class="alert-day">Day 58 of 90</span>
+              <a href="#" class="alert-link">View Profile →</a>
+            </div>
+          </div>
+          <div class="progress-card">
+            <div class="progress-card-header">
+              <div class="progress-card-title">Cohort Health Overview</div>
+              <div class="progress-card-date">Feb 2026</div>
+            </div>
+            <div class="progress-bars">
+              <div class="progress-item">
+                <span class="progress-label">On Track</span>
+                <div class="progress-track"><div class="progress-fill green" style="width:72%"></div></div>
+                <span class="progress-value">72%</span>
+              </div>
+              <div class="progress-item">
+                <span class="progress-label">Needs Watch</span>
+                <div class="progress-track"><div class="progress-fill peach" style="width:18%"></div></div>
+                <span class="progress-value">18%</span>
+              </div>
+              <div class="progress-item">
+                <span class="progress-label">At Risk</span>
+                <div class="progress-track"><div class="progress-fill red" style="width:10%"></div></div>
+                <span class="progress-value">10%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== PRICING ========== -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-header fade-in">
+        <span class="badge">Pricing</span>
+        <h2 class="section-headline">Simple pricing that scales with your team.</h2>
+      </div>
+      <div class="pricing-toggle fade-in">
+        <span class="active" id="monthlyLabel">Monthly</span>
+        <div class="toggle-switch" id="billingToggle" role="button" tabindex="0" aria-label="Toggle billing period">
+          <div class="toggle-knob"></div>
+        </div>
+        <span id="yearlyLabel">Yearly</span>
+        <span class="save-badge">Save 20%</span>
+      </div>
+      <div class="pricing-grid">
+        <div class="pricing-card fade-in">
+          <div class="pricing-tier">Starter</div>
+          <div class="pricing-price">
+            <span class="pricing-amount" data-monthly="119" data-yearly="99">$119</span>
+            <span class="pricing-period">/month</span>
+          </div>
+          <div class="pricing-divider"></div>
+          <div class="pricing-features">
+            <div class="pricing-feature">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+              Up to 10 active onboardings
+            </div>
+            <div class="pricing-feature">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+              Slack or Teams delivery
+            </div>
+            <div class="pricing-feature">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+              AI-generated message templates
+            </div>
+            <div class="pricing-feature">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+              HR dashboard
+            </div>
+          </div>
+          <div class="pricing-cta">
+            <a href="https://cal.com" class="btn-outline">Book a Demo</a>
+          </div>
+        </div>
+        <div class="pricing-card popular fade-in">
+          <span class="popular-badge">Most Popular</span>
+          <div class="pricing-tier">Growth</div>
+          <div class="pricing-price">
+            <span class="pricing-amount" data-monthly="239" data-yearly="199">$239</span>
+            <span class="pricing-period">/month</span>
+          </div>
+          <div class="pricing-divider"></div>
+          <div class="pricing-features">
+            <div class="pricing-feature">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+              Up to 25 active onboardings
+            </div>
+            <div class="pricing-feature">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+              Slack + Teams delivery
+            </div>
+            <div class="pricing-feature">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+              HRIS sync
+            </div>
+            <div class="pricing-feature">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+              Flag alerts & sentiment scoring
+            </div>
+          </div>
+          <div class="pricing-cta">
+            <a href="https://cal.com" class="btn-primary">Book a Demo</a>
+          </div>
+        </div>
+        <div class="pricing-card fade-in">
+          <div class="pricing-tier">Scale</div>
+          <div class="pricing-price">
+            <span class="pricing-amount" data-monthly="479" data-yearly="399">$479</span>
+            <span class="pricing-period">/month</span>
+          </div>
+          <div class="pricing-divider"></div>
+          <div class="pricing-features">
+            <div class="pricing-feature">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+              Unlimited onboardings
+            </div>
+            <div class="pricing-feature">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+              Everything in Growth
+            </div>
+            <div class="pricing-feature">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+              Custom message cadences
+            </div>
+            <div class="pricing-feature">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+              Priority support
+            </div>
+          </div>
+          <div class="pricing-cta">
+            <a href="https://cal.com" class="btn-outline">Book a Demo</a>
+          </div>
+        </div>
+      </div>
+      <p class="pricing-footer fade-in">No credit card required<span>·</span>Cancel anytime<span>·</span>Setup in under 30 minutes</p>
+    </div>
+  </section>
+
+  <!-- ========== CTA BANNER ========== -->
+  <section class="cta-banner" id="waitlist">
+    <div class="container fade-in">
+      <h2>Stop losing new hires in the first 90 days.</h2>
+      <p>Join HR teams who use Veloramp to keep every new hire engaged from day one.</p>
+      <a href="https://cal.com" class="btn-primary">Join the Waitlist</a>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <img src="assets/logo-icon.png" alt="Veloramp">
+          <p>AI-powered new hire engagement</p>
+        </div>
+        <div class="footer-links">
+          <a href="#how-it-works">How it works</a>
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="https://app.veloramp.com">Login</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        &copy; 2026 Veloramp. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ===== NAV SCROLL BEHAVIOR =====
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    // ===== HAMBURGER MENU =====
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('active');
+      mobileMenu.classList.toggle('open');
+      document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
+    });
+    // Close mobile menu on link click
+    document.querySelectorAll('.mobile-link').forEach(link => {
+      link.addEventListener('click', () => {
+        hamburger.classList.remove('active');
+        mobileMenu.classList.remove('open');
+        document.body.style.overflow = '';
+      });
+    });
+
+    // ===== FADE-IN ON SCROLL =====
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    // ===== PRICING TOGGLE =====
+    const billingToggle = document.getElementById('billingToggle');
+    const monthlyLabel = document.getElementById('monthlyLabel');
+    const yearlyLabel = document.getElementById('yearlyLabel');
+    let isYearly = false;
+
+    billingToggle.addEventListener('click', () => {
+      isYearly = !isYearly;
+      billingToggle.classList.toggle('active', isYearly);
+      monthlyLabel.classList.toggle('active', !isYearly);
+      yearlyLabel.classList.toggle('active', isYearly);
+      document.querySelectorAll('.pricing-amount').forEach(el => {
+        const price = isYearly ? el.dataset.yearly : el.dataset.monthly;
+        el.textContent = '$' + price;
+      });
+    });
+
+    // ===== SMOOTH SCROLL FOR NAV LINKS =====
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        const id = this.getAttribute('href');
+        if (id === '#') return;
+        const target = document.querySelector(id);
+        if (target) {
+          e.preventDefault();
+          const navHeight = nav.offsetHeight;
+          const top = target.getBoundingClientRect().top + window.scrollY - navHeight;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
